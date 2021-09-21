@@ -42,6 +42,10 @@ var consts = map[string]float64{
 	"SQRTE":   math.SqrtE,
 	"SQRTPI":  math.SqrtPi,
 	"SQRTPHI": math.SqrtPhi,
+	"LN2":     math.Ln2,
+	"LN10":    math.Ln10,
+	"LOG2E":   math.Log2E,
+	"LOG10E":  math.Log10E,
 }
 
 // SolvePostfix evaluates and returns the answer of the expression converted to postfix
