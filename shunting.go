@@ -1,9 +1,15 @@
 package calc
 
-func ShuntingYard(s Stack) Stack {
+import (
+	"fmt"
+)
+
+func ShuntingYard(s Stack) (Stack, error) {
+	parenthesisCounter := 0
+
 	postfix := Stack{}
 	operators := Stack{}
-	for _, v := range s.Values {
+	for _, v := range s {
 		switch v.Type {
 		case OPERATOR:
 			for !operators.IsEmpty() {
@@ -18,10 +24,11 @@ func ShuntingYard(s Stack) Stack {
 			}
 			operators.Push(v)
 		case LPAREN:
+			parenthesisCounter++
 			operators.Push(v)
 		case RPAREN:
 			for i := operators.Length() - 1; i >= 0; i-- {
-				if operators.Values[i].Type != LPAREN {
+				if operators[i].Type != LPAREN {
 					postfix.Push(operators.Pop())
 					continue
 				} else {
@@ -29,10 +36,15 @@ func ShuntingYard(s Stack) Stack {
 					break
 				}
 			}
+			parenthesisCounter--
 		default:
 			postfix.Push(v)
 		}
 	}
 	operators.EmptyInto(&postfix)
-	return postfix
+
+	if parenthesisCounter != 0 {
+		return postfix, fmt.Errorf("invalid parenthesis count - %d do not match", parenthesisCounter)
+	}
+	return postfix, nil
 }

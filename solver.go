@@ -45,14 +45,18 @@ var consts = map[string]float64{
 }
 
 // SolvePostfix evaluates and returns the answer of the expression converted to postfix
-func SolvePostfix(tokens Stack) float64 {
+func SolvePostfix(tokens Stack) (float64, error) {
 	stack := Stack{}
-	for _, v := range tokens.Values {
+	for _, v := range tokens {
 		switch v.Type {
 		case NUMBER:
 			stack.Push(v)
 		case FUNCTION:
-			stack.Push(Token{NUMBER, SolveFunction(v.Value)})
+			res, err := SolveFunction(v.Value)
+			if err != nil {
+				return 0.0, err
+			}
+			stack.Push(Token{NUMBER, res})
 		case CONSTANT:
 			if val, ok := consts[v.Value]; ok {
 				stack.Push(Token{NUMBER, strconv.FormatFloat(val, 'f', -1, 64)})
@@ -66,12 +70,11 @@ func SolvePostfix(tokens Stack) float64 {
 			stack.Push(Token{NUMBER, strconv.FormatFloat(result, 'f', -1, 64)})
 		}
 	}
-	out, _ := strconv.ParseFloat(stack.Values[0].Value, 64)
-	return out
+	return strconv.ParseFloat(stack[0].Value, 64)
 }
 
 // SolveFunction returns the answer of a function found within an expression
-func SolveFunction(s string) string {
+func SolveFunction(s string) (string, error) {
 	var fArg float64
 	fType := s[:strings.Index(s, "(")]
 	args := s[strings.Index(s, "(")+1 : strings.LastIndex(s, ")")]
@@ -79,10 +82,17 @@ func SolveFunction(s string) string {
 		fArg, _ = strconv.ParseFloat(args, 64)
 	} else {
 		stack, _ := NewParser(strings.NewReader(args)).Parse()
-		stack = ShuntingYard(stack)
-		fArg = SolvePostfix(stack)
+		stack, err := ShuntingYard(stack)
+		if err != nil {
+			return "", err
+		}
+
+		fArg, err = SolvePostfix(stack)
+		if err != nil {
+			return "", err
+		}
 	}
-	return strconv.FormatFloat(funcs[fType](fArg), 'f', -1, 64)
+	return strconv.FormatFloat(funcs[fType](fArg), 'f', -1, 64), nil
 }
 
 // ContainsLetter checks if a string contains a letter
@@ -95,10 +105,14 @@ func ContainsLetter(s string) bool {
 	return false
 }
 
-func Solve(s string) float64 {
+// Solve a mathematical calculation.
+func Solve(s string) (float64, error) {
 	p := NewParser(strings.NewReader(s))
 	stack, _ := p.Parse()
-	stack = ShuntingYard(stack)
-	answer := SolvePostfix(stack)
-	return answer
+	stack, err := ShuntingYard(stack)
+	if err != nil {
+		return 0.0, err
+	}
+
+	return SolvePostfix(stack)
 }

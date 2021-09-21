@@ -51,10 +51,10 @@ func (p *Parser) Parse() (Stack, error) {
 		} else if tok.Type == EOF {
 			break
 		} else if tok.Type == OPERATOR && tok.Value == "-" {
-			last_tok := stack.Peek()
-			next_tok := p.ScanIgnoreWhitespace()
-			if (last_tok.Type == OPERATOR || last_tok.Value == "" || last_tok.Type == LPAREN) && next_tok.Type == NUMBER {
-				stack.Push(Token{NUMBER, "-" + next_tok.Value})
+			lastTok := stack.Peek()
+			nextTok := p.ScanIgnoreWhitespace()
+			if (lastTok.Type == OPERATOR || lastTok.Value == "" || lastTok.Type == LPAREN) && nextTok.Type == NUMBER {
+				stack.Push(Token{NUMBER, "-" + nextTok.Value})
 			} else {
 				stack.Push(tok)
 				p.Unscan()
