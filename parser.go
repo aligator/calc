@@ -1,7 +1,7 @@
 package calc
 
 import (
-	"fmt"
+	"errors"
 	"io"
 )
 
@@ -17,25 +17,32 @@ func NewParser(r io.Reader) *Parser {
 	return &Parser{s: NewScanner(r)}
 }
 
-func (p *Parser) Scan() (tok Token) {
+func (p *Parser) Scan() (Token, error) {
 	if p.buf.n != 0 {
 		p.buf.n = 0
-		return p.buf.tok
+		return p.buf.tok, nil
 	}
 
-	tok = p.s.Scan()
+	tok, err := p.s.Scan()
+	if err != nil {
+		return Token{}, err
+	}
 
 	p.buf.tok = tok
 
-	return
+	return tok, nil
 }
 
-func (p *Parser) ScanIgnoreWhitespace() (tok Token) {
-	tok = p.Scan()
-	if tok.Type == WHITESPACE {
-		tok = p.Scan()
+func (p *Parser) ScanIgnoreWhitespace() (Token, error) {
+	tok, err := p.Scan()
+	if err != nil {
+		return Token{}, err
 	}
-	return
+
+	if tok.Type == Whitespace {
+		return p.ScanIgnoreWhitespace()
+	}
+	return tok, nil
 }
 
 func (p *Parser) Unscan() {
@@ -45,16 +52,20 @@ func (p *Parser) Unscan() {
 func (p *Parser) Parse() (Stack, error) {
 	stack := Stack{}
 	for {
-		tok := p.ScanIgnoreWhitespace()
-		if tok.Type == ERROR {
-			return Stack{}, fmt.Errorf("ERROR: %q", tok.Value)
-		} else if tok.Type == EOF {
+		tok, err := p.ScanIgnoreWhitespace()
+		if errors.Is(err, io.EOF) {
 			break
-		} else if tok.Type == OPERATOR && tok.Value == "-" {
+		} else if err != nil {
+			return Stack{}, err
+		} else if tok.Type == Operator && tok.Value == "-" {
 			lastTok := stack.Peek()
-			nextTok := p.ScanIgnoreWhitespace()
-			if (lastTok.Type == OPERATOR || lastTok.Value == "" || lastTok.Type == LPAREN) && nextTok.Type == NUMBER {
-				stack.Push(Token{NUMBER, "-" + nextTok.Value})
+			nextTok, err := p.ScanIgnoreWhitespace()
+			if err != nil {
+				return Stack{}, err
+			}
+
+			if (lastTok.Type == Operator || lastTok.Value == "" || lastTok.Type == Lparen) && nextTok.Type == Number {
+				stack.Push(Token{Number, "-" + nextTok.Value})
 			} else {
 				stack.Push(tok)
 				p.Unscan()

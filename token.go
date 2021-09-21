@@ -7,16 +7,12 @@ type Token struct {
 	Value string
 }
 
-var eof = rune(0)
-
 const (
-	NUMBER TokenType = iota
-	LPAREN
-	RPAREN
-	CONSTANT
-	FUNCTION
-	OPERATOR
-	WHITESPACE
-	ERROR
-	EOF
+	Number TokenType = iota
+	Lparen
+	Rparen
+	Constant
+	Function
+	Operator
+	Whitespace
 )

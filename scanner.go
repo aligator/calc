@@ -3,6 +3,8 @@ package calc
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"unicode"
@@ -16,20 +18,30 @@ func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{r: bufio.NewReader(r)}
 }
 
-func (s *Scanner) Read() rune {
+func (s *Scanner) Read() (rune, error) {
 	ch, _, err := s.r.ReadRune()
-	if err != nil {
-		return eof
-	}
-	return ch
+	return ch, err
 }
 
 func (s *Scanner) Unread() {
 	_ = s.r.UnreadRune()
 }
 
-func (s *Scanner) Scan() Token {
-	ch := s.Read()
+func (s *Scanner) loadNextRuneTo(buf bytes.Buffer) error {
+	r, err := s.Read()
+	if err != nil {
+		return err
+	}
+	buf.WriteRune(r)
+
+	return nil
+}
+
+func (s *Scanner) Scan() (Token, error) {
+	ch, err := s.Read()
+	if err != nil {
+		return Token{}, err
+	}
 
 	if unicode.IsDigit(ch) {
 		s.Unread()
@@ -38,41 +50,47 @@ func (s *Scanner) Scan() Token {
 		s.Unread()
 		return s.ScanWord()
 	} else if IsOperator(ch) {
-		return Token{OPERATOR, string(ch)}
+		return Token{Operator, string(ch)}, nil
 	} else if IsWhitespace(ch) {
 		s.Unread()
 		return s.ScanWhitespace()
 	}
 
 	switch ch {
-	case eof:
-		return Token{EOF, ""}
 	case '(':
-		return Token{LPAREN, "("}
+		return Token{Lparen, "("}, nil
 	case ')':
-		return Token{RPAREN, ")"}
+		return Token{Rparen, ")"}, nil
 	}
 
-	return Token{ERROR, string(ch)}
+	return Token{}, fmt.Errorf("invalid token %v", ch)
 }
 
-func (s *Scanner) ScanWord() Token {
+func (s *Scanner) ScanWord() (Token, error) {
 	var buf bytes.Buffer
-	buf.WriteRune(s.Read())
+	if err := s.loadNextRuneTo(buf); err != nil {
+		return Token{}, err
+	}
 
 	for {
-		if ch := s.Read(); ch == eof {
+		if ch, err := s.Read(); errors.Is(err, io.EOF) {
 			break
+		} else if err != nil {
+			return Token{}, err
 		} else if ch == '(' {
 			_, _ = buf.WriteRune(ch)
-			parencount := 1
-			for parencount > 0 {
-				fch := s.Read()
+			parentCount := 1
+			for parentCount > 0 {
+				fch, err := s.Read()
+				if err != nil {
+					return Token{}, err
+				}
+
 				if fch == '(' {
-					parencount += 1
+					parentCount += 1
 					_, _ = buf.WriteRune(fch)
 				} else if fch == ')' {
-					parencount -= 1
+					parentCount -= 1
 					_, _ = buf.WriteRune(fch)
 				} else {
 					_, _ = buf.WriteRune(fch)
@@ -88,19 +106,23 @@ func (s *Scanner) ScanWord() Token {
 
 	value := strings.ToUpper(buf.String())
 	if strings.ContainsAny(value, "()") {
-		return Token{FUNCTION, value}
+		return Token{Function, value}, nil
 	} else {
-		return Token{CONSTANT, value}
+		return Token{Constant, value}, nil
 	}
 }
 
-func (s *Scanner) ScanNumber() Token {
+func (s *Scanner) ScanNumber() (Token, error) {
 	var buf bytes.Buffer
-	buf.WriteRune(s.Read())
+	if err := s.loadNextRuneTo(buf); err != nil {
+		return Token{}, err
+	}
 
 	for {
-		if ch := s.Read(); ch == eof {
+		if ch, err := s.Read(); errors.Is(err, io.EOF) {
 			break
+		} else if err != nil {
+			return Token{}, err
 		} else if !unicode.IsDigit(ch) && ch != '.' {
 			s.Unread()
 			break
@@ -109,16 +131,20 @@ func (s *Scanner) ScanNumber() Token {
 		}
 	}
 
-	return Token{NUMBER, buf.String()}
+	return Token{Number, buf.String()}, nil
 }
 
-func (s *Scanner) ScanWhitespace() Token {
+func (s *Scanner) ScanWhitespace() (Token, error) {
 	var buf bytes.Buffer
-	buf.WriteRune(s.Read())
+	if err := s.loadNextRuneTo(buf); err != nil {
+		return Token{}, err
+	}
 
 	for {
-		if ch := s.Read(); ch == eof {
+		if ch, err := s.Read(); errors.Is(err, io.EOF) {
 			break
+		} else if err != nil {
+			return Token{}, err
 		} else if !IsWhitespace(ch) {
 			s.Unread()
 			break
@@ -127,7 +153,7 @@ func (s *Scanner) ScanWhitespace() Token {
 		}
 	}
 
-	return Token{WHITESPACE, buf.String()}
+	return Token{Whitespace, buf.String()}, nil
 }
 
 func IsOperator(r rune) bool {

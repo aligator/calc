@@ -53,25 +53,25 @@ func SolvePostfix(tokens Stack) (float64, error) {
 	stack := Stack{}
 	for _, v := range tokens {
 		switch v.Type {
-		case NUMBER:
+		case Number:
 			stack.Push(v)
-		case FUNCTION:
+		case Function:
 			res, err := SolveFunction(v.Value)
 			if err != nil {
 				return 0.0, err
 			}
-			stack.Push(Token{NUMBER, res})
-		case CONSTANT:
+			stack.Push(Token{Number, res})
+		case Constant:
 			if val, ok := consts[v.Value]; ok {
-				stack.Push(Token{NUMBER, strconv.FormatFloat(val, 'f', -1, 64)})
+				stack.Push(Token{Number, strconv.FormatFloat(val, 'f', -1, 64)})
 			}
-		case OPERATOR:
+		case Operator:
 			f := oprData[v.Value].fx
 			var x, y float64
 			y, _ = strconv.ParseFloat(stack.Pop().Value, 64)
 			x, _ = strconv.ParseFloat(stack.Pop().Value, 64)
 			result := f(x, y)
-			stack.Push(Token{NUMBER, strconv.FormatFloat(result, 'f', -1, 64)})
+			stack.Push(Token{Number, strconv.FormatFloat(result, 'f', -1, 64)})
 		}
 	}
 	return strconv.ParseFloat(stack[0].Value, 64)

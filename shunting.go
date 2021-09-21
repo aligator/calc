@@ -11,7 +11,7 @@ func ShuntingYard(s Stack) (Stack, error) {
 	operators := Stack{}
 	for _, v := range s {
 		switch v.Type {
-		case OPERATOR:
+		case Operator:
 			for !operators.IsEmpty() {
 				val := v.Value
 				top := operators.Peek().Value
@@ -23,12 +23,12 @@ func ShuntingYard(s Stack) (Stack, error) {
 				break
 			}
 			operators.Push(v)
-		case LPAREN:
+		case Lparen:
 			parenthesisCounter++
 			operators.Push(v)
-		case RPAREN:
+		case Rparen:
 			for i := operators.Length() - 1; i >= 0; i-- {
-				if operators[i].Type != LPAREN {
+				if operators[i].Type != Lparen {
 					postfix.Push(operators.Pop())
 					continue
 				} else {
