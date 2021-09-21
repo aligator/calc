@@ -1,21 +1,27 @@
-package calc
+package calc_test
 
-import "testing"
+import (
+	"github.com/aligator/calc"
+	"testing"
+)
 
 func TestContainsLetter(t *testing.T) {
-	type args struct {
-		s string
-	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name  string
+		input string
+		want  bool
 	}{
-		// TODO: Add test cases.
+		{name: "empty string", input: "", want: false},
+		{name: "one char", input: "c", want: true},
+		{name: "one digit", input: "3", want: false},
+		{name: "several chars with spaces, tabs and newlines", input: "  c  sdfg    \n \t fg ", want: true},
+		{name: "several digits with spaces, tabs and newlines", input: "  7843 5435  4\n \t 34234 ", want: false},
+		{name: "numbers and chars", input: "8437878g sjfg g sdfag", want: true},
+		{name: "only special chars", input: "+?!", want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ContainsLetter(tt.args.s); got != tt.want {
+			if got := calc.ContainsLetter(tt.input); got != tt.want {
 				t.Errorf("ContainsLetter() = %v, want %v", got, tt.want)
 			}
 		})
@@ -49,7 +55,7 @@ func TestSolve(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Solve(tt.input)
+			got, err := calc.Solve(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Solve() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -75,7 +81,7 @@ func TestSolveFunction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := SolveFunction(tt.args.s)
+			got, err := calc.SolveFunction(tt.args.s)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SolveFunction() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -89,7 +95,7 @@ func TestSolveFunction(t *testing.T) {
 
 func TestSolvePostfix(t *testing.T) {
 	type args struct {
-		tokens Stack
+		tokens calc.Stack
 	}
 	tests := []struct {
 		name    string
@@ -101,7 +107,7 @@ func TestSolvePostfix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := SolvePostfix(tt.args.tokens)
+			got, err := calc.SolvePostfix(tt.args.tokens)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SolvePostfix() error = %v, wantErr %v", err, tt.wantErr)
 				return
