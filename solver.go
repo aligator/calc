@@ -1,6 +1,8 @@
 package calc
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -58,7 +60,7 @@ func SolvePostfix(tokens Stack) (float64, error) {
 		case Function:
 			res, err := SolveFunction(v.Value)
 			if err != nil {
-				return 0.0, err
+				return 0, err
 			}
 			stack.Push(Token{Number, res})
 		case Constant:
@@ -67,13 +69,24 @@ func SolvePostfix(tokens Stack) (float64, error) {
 			}
 		case Operator:
 			f := oprData[v.Value].fx
-			var x, y float64
-			y, _ = strconv.ParseFloat(stack.Pop().Value, 64)
-			x, _ = strconv.ParseFloat(stack.Pop().Value, 64)
+			y, err := strconv.ParseFloat(stack.Pop().Value, 64)
+			if err != nil {
+				return 0, err
+			}
+			x, err := strconv.ParseFloat(stack.Pop().Value, 64)
+			if err != nil {
+				return 0, err
+			}
+
 			result := f(x, y)
 			stack.Push(Token{Number, strconv.FormatFloat(result, 'f', -1, 64)})
 		}
 	}
+
+	if len(stack) == 0 {
+		return 0, errors.New("empty stack - calculation could not be solved")
+	}
+
 	return strconv.ParseFloat(stack[0].Value, 64)
 }
 
@@ -96,7 +109,13 @@ func SolveFunction(s string) (string, error) {
 			return "", err
 		}
 	}
-	return strconv.FormatFloat(funcs[fType](fArg), 'f', -1, 64), nil
+
+	function, ok := funcs[fType]
+	if !ok {
+		return "", fmt.Errorf("function does not exist: %s", fType)
+	}
+
+	return strconv.FormatFloat(function(fArg), 'f', -1, 64), nil
 }
 
 // ContainsLetter checks if a string contains a letter

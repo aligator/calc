@@ -93,6 +93,28 @@ func TestShuntingYard(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "with other not matching Parentheses",
+			input: calc.Stack{ // ( 1 + 2 * ((77 + 55)) + 3))
+				{Type: calc.Lparen, Value: "("},
+				{Type: calc.Number, Value: "1"},
+				{Type: calc.Operator, Value: "+"},
+				{Type: calc.Number, Value: "2"},
+				{Type: calc.Operator, Value: "*"},
+				{Type: calc.Lparen, Value: "("},
+				{Type: calc.Lparen, Value: "("},
+				{Type: calc.Number, Value: "77"},
+				{Type: calc.Operator, Value: "+"},
+				{Type: calc.Number, Value: "55"},
+				{Type: calc.Rparen, Value: ")"},
+				{Type: calc.Rparen, Value: ")"},
+				{Type: calc.Operator, Value: "+"},
+				{Type: calc.Number, Value: "3"},
+				{Type: calc.Rparen, Value: ")"},
+				{Type: calc.Rparen, Value: ")"},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
