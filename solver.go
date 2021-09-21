@@ -93,18 +93,17 @@ func SolvePostfix(tokens Stack) (float64, error) {
 // SolveFunction returns the answer of a function found within an expression
 func SolveFunction(s string) (string, error) {
 	var fArg float64
+	var err error
+
 	fType := s[:strings.Index(s, "(")]
 	args := s[strings.Index(s, "(")+1 : strings.LastIndex(s, ")")]
-	if !strings.ContainsAny(args, "+ & * & - & / & ^") && !ContainsLetter(args) {
-		fArg, _ = strconv.ParseFloat(args, 64)
-	} else {
-		stack, _ := NewParser(strings.NewReader(args)).Parse()
-		stack, err := ShuntingYard(stack)
+	if !strings.ContainsAny(args, "+*-/^") && !ContainsLetter(args) {
+		fArg, err = strconv.ParseFloat(args, 64)
 		if err != nil {
 			return "", err
 		}
-
-		fArg, err = SolvePostfix(stack)
+	} else {
+		fArg, err = Solve(args)
 		if err != nil {
 			return "", err
 		}
@@ -130,9 +129,12 @@ func ContainsLetter(s string) bool {
 
 // Solve a mathematical calculation.
 func Solve(s string) (float64, error) {
-	p := NewParser(strings.NewReader(s))
-	stack, _ := p.Parse()
-	stack, err := ShuntingYard(stack)
+	stack, err := NewParser(strings.NewReader(s)).Parse()
+	if err != nil {
+		return 0, err
+	}
+
+	stack, err = ShuntingYard(stack)
 	if err != nil {
 		return 0.0, err
 	}

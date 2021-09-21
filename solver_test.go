@@ -43,6 +43,7 @@ func TestSolve(t *testing.T) {
 		{name: "simple exp", input: "2^3", want: 8},
 		{name: "with constant", input: "2^3+PI", want: 11.141592653589793},
 		{name: "with function", input: "COS(5)", want: 0.2836621854632263},
+		{name: "with function which itself contains also a calculation", input: "COS(3+2)", want: 0.2836621854632263},
 		{name: "with parentheses", input: "2*(5+3)", want: 16},
 		{name: "with more parentheses", input: "((2*(5+3))+4)*(300/100)", want: 60},
 		{name: "with spaces, tabs and newlines", input: "    (  \n   (2*(  \t\t\t5+    3))+4)*  \n       (300    / 100)   ", want: 60},
@@ -52,6 +53,10 @@ func TestSolve(t *testing.T) {
 		{name: "invalid calculation: wrong parentheses2", input: "(2*(5+3))+4)", wantErr: true},
 		{name: "invalid calculation: invalid function", input: "(2*(5+3))+4*LOOL(5)", wantErr: true},
 		{name: "invalid calculation: invalid constant", input: "(2*(5+3))+4*LOOL", wantErr: true},
+		{name: "invalid float", input: "2.243.4*345", wantErr: true},
+		{name: "invalid float2", input: "543*454.45.45.45", wantErr: true},
+		{name: "invalid float2 in function", input: "543*LOOL(5.345.54.35)", wantErr: true},
+		{name: "invalid calculation inside a function", input: "COS(3+)", wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
