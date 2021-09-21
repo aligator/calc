@@ -44,14 +44,14 @@ func (s *Scanner) Scan() (Token, error) {
 	}
 
 	if unicode.IsDigit(ch) {
-		err := s.Unread()
+		err = s.Unread()
 		if err != nil {
 			return Token{}, err
 		}
 
 		return s.ScanNumber()
 	} else if unicode.IsLetter(ch) {
-		err := s.Unread()
+		err = s.Unread()
 		if err != nil {
 			return Token{}, err
 		}
@@ -60,7 +60,7 @@ func (s *Scanner) Scan() (Token, error) {
 	} else if IsOperator(ch) {
 		return Token{Operator, string(ch)}, nil
 	} else if unicode.IsSpace(ch) {
-		err := s.Unread()
+		err = s.Unread()
 		if err != nil {
 			return Token{}, err
 		}
@@ -122,7 +122,10 @@ func (s *Scanner) ScanWord() (Token, error) {
 				}
 			}
 		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
-			s.Unread()
+			err = s.Unread()
+			if err != nil {
+				return Token{}, err
+			}
 			break
 		} else {
 			_, err = buf.WriteRune(ch)
@@ -152,7 +155,10 @@ func (s *Scanner) ScanNumber() (Token, error) {
 		} else if err != nil {
 			return Token{}, err
 		} else if !unicode.IsDigit(ch) && ch != '.' {
-			s.Unread()
+			err = s.Unread()
+			if err != nil {
+				return Token{}, err
+			}
 			break
 		} else {
 			_, err = buf.WriteRune(ch)
@@ -177,7 +183,10 @@ func (s *Scanner) ScanWhitespace() (Token, error) {
 		} else if err != nil {
 			return Token{}, err
 		} else if !unicode.IsSpace(ch) {
-			s.Unread()
+			err = s.Unread()
+			if err != nil {
+				return Token{}, err
+			}
 			break
 		} else {
 			buf.WriteRune(ch)
