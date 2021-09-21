@@ -40,7 +40,7 @@ func (p *Parser) ScanIgnoreWhitespace() (Token, error) {
 	}
 
 	if tok.Type == Whitespace {
-		return p.ScanIgnoreWhitespace()
+		return p.Scan()
 	}
 	return tok, nil
 }

@@ -27,7 +27,7 @@ func (s *Scanner) Unread() {
 	_ = s.r.UnreadRune()
 }
 
-func (s *Scanner) loadNextRuneTo(buf bytes.Buffer) error {
+func (s *Scanner) loadNextRuneTo(buf *bytes.Buffer) error {
 	r, err := s.Read()
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func (s *Scanner) Scan() (Token, error) {
 
 func (s *Scanner) ScanWord() (Token, error) {
 	var buf bytes.Buffer
-	if err := s.loadNextRuneTo(buf); err != nil {
+	if err := s.loadNextRuneTo(&buf); err != nil {
 		return Token{}, err
 	}
 
@@ -114,7 +114,7 @@ func (s *Scanner) ScanWord() (Token, error) {
 
 func (s *Scanner) ScanNumber() (Token, error) {
 	var buf bytes.Buffer
-	if err := s.loadNextRuneTo(buf); err != nil {
+	if err := s.loadNextRuneTo(&buf); err != nil {
 		return Token{}, err
 	}
 
@@ -136,7 +136,7 @@ func (s *Scanner) ScanNumber() (Token, error) {
 
 func (s *Scanner) ScanWhitespace() (Token, error) {
 	var buf bytes.Buffer
-	if err := s.loadNextRuneTo(buf); err != nil {
+	if err := s.loadNextRuneTo(&buf); err != nil {
 		return Token{}, err
 	}
 
