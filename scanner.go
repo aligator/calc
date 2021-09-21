@@ -23,8 +23,8 @@ func (s *Scanner) Read() (rune, error) {
 	return ch, err
 }
 
-func (s *Scanner) Unread() {
-	_ = s.r.UnreadRune()
+func (s *Scanner) Unread() error {
+	return s.r.UnreadRune()
 }
 
 func (s *Scanner) loadNextRuneTo(buf *bytes.Buffer) error {
@@ -44,15 +44,27 @@ func (s *Scanner) Scan() (Token, error) {
 	}
 
 	if unicode.IsDigit(ch) {
-		s.Unread()
+		err := s.Unread()
+		if err != nil {
+			return Token{}, err
+		}
+
 		return s.ScanNumber()
 	} else if unicode.IsLetter(ch) {
-		s.Unread()
+		err := s.Unread()
+		if err != nil {
+			return Token{}, err
+		}
+
 		return s.ScanWord()
 	} else if IsOperator(ch) {
 		return Token{Operator, string(ch)}, nil
 	} else if unicode.IsSpace(ch) {
-		s.Unread()
+		err := s.Unread()
+		if err != nil {
+			return Token{}, err
+		}
+
 		return s.ScanWhitespace()
 	}
 
@@ -78,7 +90,11 @@ func (s *Scanner) ScanWord() (Token, error) {
 		} else if err != nil {
 			return Token{}, err
 		} else if ch == '(' {
-			_, _ = buf.WriteRune(ch)
+			_, err = buf.WriteRune(ch)
+			if err != nil {
+				return Token{}, err
+			}
+
 			parentCount := 1
 			for parentCount > 0 {
 				fch, err := s.Read()
@@ -88,19 +104,31 @@ func (s *Scanner) ScanWord() (Token, error) {
 
 				if fch == '(' {
 					parentCount += 1
-					_, _ = buf.WriteRune(fch)
+					_, err = buf.WriteRune(fch)
+					if err != nil {
+						return Token{}, err
+					}
 				} else if fch == ')' {
 					parentCount -= 1
-					_, _ = buf.WriteRune(fch)
+					_, err = buf.WriteRune(fch)
+					if err != nil {
+						return Token{}, err
+					}
 				} else {
-					_, _ = buf.WriteRune(fch)
+					_, err = buf.WriteRune(fch)
+					if err != nil {
+						return Token{}, err
+					}
 				}
 			}
 		} else if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) {
 			s.Unread()
 			break
 		} else {
-			_, _ = buf.WriteRune(ch)
+			_, err = buf.WriteRune(ch)
+			if err != nil {
+				return Token{}, err
+			}
 		}
 	}
 
@@ -127,7 +155,10 @@ func (s *Scanner) ScanNumber() (Token, error) {
 			s.Unread()
 			break
 		} else {
-			_, _ = buf.WriteRune(ch)
+			_, err = buf.WriteRune(ch)
+			if err != nil {
+				return Token{}, err
+			}
 		}
 	}
 
