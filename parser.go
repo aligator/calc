@@ -5,12 +5,21 @@ import (
 	"io"
 )
 
+type tokenBuffer struct {
+	tok Token
+	n   int
+}
+
+// TokenScanner defines a scanner which returns one token on each scan.
+type TokenScanner interface {
+	// Scan returns one token on each scan.
+	// If the previous token was the last one, it must return io.EOF.
+	Scan() (Token, error)
+}
+
 type Parser struct {
-	s   *Scanner
-	buf struct {
-		tok Token
-		n   int
-	}
+	s   TokenScanner
+	buf tokenBuffer
 }
 
 func NewParser(r io.Reader) *Parser {

@@ -136,7 +136,7 @@ func Solve(s string) (float64, error) {
 
 	stack, err = ShuntingYard(stack)
 	if err != nil {
-		return 0.0, err
+		return 0, err
 	}
 
 	return SolvePostfix(stack)
