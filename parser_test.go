@@ -18,7 +18,7 @@ type tokenOrErrStack []tokenOrErr
 func (t tokenOrErrStack) toStack() Stack {
 	res := Stack{}
 	for _, token := range t {
-		if token.err != io.EOF {
+		if token.err != io.EOF && token.token.Type != Whitespace {
 			res.Push(token.token)
 		}
 	}
@@ -41,6 +41,11 @@ func (f *fakeScanner) Scan() (Token, error) {
 	return tokenOrErr.token, nil
 }
 
+func (f *fakeScanner) seek(n int) *fakeScanner {
+	f.current = n
+	return f
+}
+
 func newFakeScanner(tokens tokenOrErrStack) *fakeScanner {
 	return &fakeScanner{results: tokens}
 }
@@ -49,6 +54,14 @@ var (
 	testTokensNormal = tokenOrErrStack{
 		{token: Token{Type: Number, Value: "42"}},
 		{token: Token{Type: Constant, Value: "PI"}},
+		{token: Token{Type: Function, Value: "COS"}},
+		{err: io.EOF},
+	}
+
+	testTokensWithWhiteSpace = tokenOrErrStack{
+		{token: Token{Type: Number, Value: "42"}},
+		{token: Token{Type: Constant, Value: "PI"}},
+		{token: Token{Type: Whitespace, Value: " "}},
 		{token: Token{Type: Function, Value: "COS"}},
 		{err: io.EOF},
 	}
@@ -99,6 +112,14 @@ func TestParser_Parse(t *testing.T) {
 			want:    Stack{},
 			wantErr: true,
 		},
+		{
+			name: "with whitespace",
+			fields: fields{
+				s: newFakeScanner(testTokensWithWhiteSpace),
+			},
+			want:    testTokensNormal.toStack(),
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -120,18 +141,44 @@ func TestParser_Parse(t *testing.T) {
 
 func TestParser_Scan(t *testing.T) {
 	type fields struct {
-		s   *Scanner
-		buf struct {
-			tok Token
-			n   int
-		}
+		s   TokenScanner
+		buf tokenBuffer
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		want    Token
 		wantErr bool
-	}{}
+	}{
+		{
+			name: "first token of valid scanner",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal),
+			},
+			want: testTokensNormal[0].token,
+		},
+		{
+			name: "middle token of valid scanner",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal).seek(1),
+			},
+			want: testTokensNormal[1].token,
+		},
+		{
+			name: "next is eof",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal).seek(3),
+			},
+			wantErr: true,
+		},
+		{
+			name: "with whitespace",
+			fields: fields{
+				s: newFakeScanner(testTokensWithWhiteSpace).seek(2),
+			},
+			want: testTokensWithWhiteSpace[2].token,
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &Parser{
@@ -152,11 +199,8 @@ func TestParser_Scan(t *testing.T) {
 
 func TestParser_ScanIgnoreWhitespace(t *testing.T) {
 	type fields struct {
-		s   *Scanner
-		buf struct {
-			tok Token
-			n   int
-		}
+		s   TokenScanner
+		buf tokenBuffer
 	}
 	tests := []struct {
 		name    string
@@ -164,7 +208,34 @@ func TestParser_ScanIgnoreWhitespace(t *testing.T) {
 		want    Token
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "first token of valid scanner",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal),
+			},
+			want: testTokensNormal[0].token,
+		},
+		{
+			name: "middle token of valid scanner",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal).seek(1),
+			},
+			want: testTokensNormal[1].token,
+		},
+		{
+			name: "next is eof",
+			fields: fields{
+				s: newFakeScanner(testTokensNormal).seek(3),
+			},
+			wantErr: true,
+		},
+		{
+			name: "with whitespace - gets ignored",
+			fields: fields{
+				s: newFakeScanner(testTokensWithWhiteSpace).seek(2),
+			},
+			want: testTokensWithWhiteSpace[3].token,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -186,11 +257,8 @@ func TestParser_ScanIgnoreWhitespace(t *testing.T) {
 
 func TestParser_Unscan(t *testing.T) {
 	type fields struct {
-		s   *Scanner
-		buf struct {
-			tok Token
-			n   int
-		}
+		s   TokenScanner
+		buf tokenBuffer
 	}
 	tests := []struct {
 		name   string
@@ -204,6 +272,8 @@ func TestParser_Unscan(t *testing.T) {
 				s:   tt.fields.s,
 				buf: tt.fields.buf,
 			}
+
+			p.Unscan()
 
 			fmt.Println(p)
 		})
